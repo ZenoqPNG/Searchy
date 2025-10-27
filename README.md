@@ -65,3 +65,109 @@ Projet Python pour apprendre, s’amuser et améliorer la recherche Windows 😎
 Tu peux réutiliser, modifier ou partager le projet tant que tu cites l’auteur ✌️
 
 ```
+
+---
+
+🔍 Searchy
+
+> A fast and stylish Python app to find any file on your PC — more efficiently than Windows Search.
+
+
+
+
+---
+
+⚡️ Description
+
+Searchy automatically scans your main folders — Downloads, Documents, Desktop, Pictures, and Music — and lets you instantly find files and folders through an optimized search engine.
+You can open files directly from the interface, rescan the system, all within a dark Netflix-inspired design 🔴
+
+
+---
+
+🧠 Features
+
+📁 Automatic scan of main Windows folders
+
+⚡ Ultra-fast search with cache (pickle)
+
+🪟 Direct file/folder opening
+
+💾 Local cache for faster next searches
+
+🎨 Modern dark Tkinter interface
+
+🔄 “Rescan” option to update the database
+
+📝 Integrated history and favorites
+
+🎁 Credits page included
+
+
+
+---
+
+🧩 Installation
+
+1️⃣ Download the .ZIP source code (recommended)
+
+For best use, create a shortcut of Searchy.exe on your Desktop:
+
+1. Locate Searchy.exe inside the dist folder.
+
+
+2. Right-click → Create shortcut.
+
+
+3. Move the shortcut to your Desktop.
+
+
+4. Launch Searchy from there for the best experience.
+
+
+
+
+---
+
+2️⃣ (Optional) For developers / Python version
+
+Clone or download the project:
+
+git clone https://github.com/ZenoqPNG/Searchy.git
+cd Searchy
+
+Install Python (3.8 or higher) 👉 https://www.python.org/downloads/
+
+
+---
+
+💡 Tips
+
+The cache file (searchy_cache.pkl) keeps a list of scanned files → making searches almost instant.
+
+Click 🔄 Rescan to refresh results after adding or removing files.
+
+Double-click a result to open it directly.
+
+Use History or Favorites to quickly find previous searches or important files.
+
+
+
+---
+
+👨‍💻 Author
+
+ZenoqPNG
+A Python project made to learn, have fun, and make Windows Search better 😎
+
+
+---
+
+⚙️ License
+
+📝 MIT License
+You’re free to reuse, modify, or share the project — just credit the author ✌️
+
+
+---
+
