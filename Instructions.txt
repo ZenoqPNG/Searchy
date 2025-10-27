@@ -1,0 +1,18 @@
+Instructions pour utiliser Searchy
+
+Localisez le fichier Searchy.exe :
+Après la compilation, il se trouve dans le dossier dist de votre projet.
+
+Créez un raccourci sur le bureau :
+
+Faites un clic droit sur Searchy.exe.
+
+Sélectionnez “Créer un raccourci”.
+
+Déplacez le raccourci sur votre Bureau.
+
+Lancez Searchy depuis le raccourci :
+Pour la meilleure expérience, ouvrez l’application depuis le raccourci sur votre Bureau.
+
+Profitez de Searchy !
+Vous pouvez maintenant rechercher vos fichiers rapidement, accéder aux favoris, voir l’historique et consulter les crédits depuis l’application.
