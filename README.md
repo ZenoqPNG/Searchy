@@ -64,11 +64,9 @@ Projet Python pour apprendre, s’amuser et améliorer la recherche Windows 😎
 📝 **MIT License**
 Tu peux réutiliser, modifier ou partager le projet tant que tu cites l’auteur ✌️
 
-```
-
 ---
 
-🔍 Searchy
+## 🔍 Searchy
 
 > A fast and stylish Python app to find any file on your PC — more efficiently than Windows Search.
 
@@ -77,7 +75,7 @@ Tu peux réutiliser, modifier ou partager le projet tant que tu cites l’auteur
 
 ---
 
-⚡️ Description
+##⚡️ Description
 
 Searchy automatically scans your main folders — Downloads, Documents, Desktop, Pictures, and Music — and lets you instantly find files and folders through an optimized search engine.
 You can open files directly from the interface, rescan the system, all within a dark Netflix-inspired design 🔴
@@ -85,7 +83,7 @@ You can open files directly from the interface, rescan the system, all within a 
 
 ---
 
-🧠 Features
+## 🧠 Features
 
 📁 Automatic scan of main Windows folders
 
@@ -107,7 +105,7 @@ You can open files directly from the interface, rescan the system, all within a 
 
 ---
 
-🧩 Installation
+## 🧩 Installation
 
 1️⃣ Download the .ZIP source code (recommended)
 
@@ -129,7 +127,7 @@ For best use, create a shortcut of Searchy.exe on your Desktop:
 
 ---
 
-2️⃣ (Optional) For developers / Python version
+## 2️⃣ (Optional) For developers / Python version
 
 Clone or download the project:
 
@@ -141,7 +139,7 @@ Install Python (3.8 or higher) 👉 https://www.python.org/downloads/
 
 ---
 
-💡 Tips
+## 💡 Tips
 
 The cache file (searchy_cache.pkl) keeps a list of scanned files → making searches almost instant.
 
@@ -155,7 +153,7 @@ Use History or Favorites to quickly find previous searches or important files.
 
 ---
 
-👨‍💻 Author
+## 👨‍💻 Author
 
 ZenoqPNG
 A Python project made to learn, have fun, and make Windows Search better 😎
@@ -163,7 +161,7 @@ A Python project made to learn, have fun, and make Windows Search better 😎
 
 ---
 
-⚙️ License
+## ⚙️ License
 
 📝 MIT License
 You’re free to reuse, modify, or share the project — just credit the author ✌️
