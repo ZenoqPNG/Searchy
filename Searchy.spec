@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['Searchy.py'],
+    ['searchy.py'],
     pathex=[],
     binaries=[],
     datas=[('assets', 'assets')],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Searchy',
+    name='searchy',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
