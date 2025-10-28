@@ -24,13 +24,12 @@ Tu peux ouvrir les fichiers directement depuis l’interface, rescanner le syst�
 
 ## 🧩 Installation
 
-### 1️⃣ Télécharger le `code source en .ZIP` (recommandé)
+### 1️⃣ Télécharger le `Fichier en .exe` (recommandé)
 Pour une utilisation optimale, crée un **raccourci du fichier `Searchy.exe`** sur ton Bureau :
 
-1. Localise `Searchy.exe` dans le dossier `dist`.  
-2. Clic droit → **Créer un raccourci**.  
-3. Déplace le raccourci sur ton **Bureau**.  
-4. Lance Searchy depuis le raccourci pour la meilleure expérience.
+1. Clic droit → **Créer un raccourci**.  
+2. Déplace le raccourci sur ton **Bureau**.
+3. Lance Searchy depuis le raccourci pour la meilleure expérience.
 
 ### 2️⃣ (Optionnel) Pour les développeurs / version Python
 Clone ou télécharge le projet :
@@ -107,20 +106,17 @@ You can open files directly from the interface, rescan the system, all within a 
 
 ## 🧩 Installation
 
-1️⃣ Download the .ZIP source code (recommended)
+1️⃣ Download the .exe file (recommended)
 
 For best use, create a shortcut of Searchy.exe on your Desktop:
 
-1. Locate Searchy.exe inside the dist folder.
+1. Right-click → Create shortcut.
 
 
-2. Right-click → Create shortcut.
+2. Move the shortcut to your Desktop.
 
 
-3. Move the shortcut to your Desktop.
-
-
-4. Launch Searchy from there for the best experience.
+3. Launch Searchy from there for the best experience.
 
 
 
