@@ -6,7 +6,7 @@
 
 ## ⚡️ Description
 **Searchy** scanne automatiquement tes dossiers principaux — **Téléchargements, Documents, Bureau, Images, Musique** — et te permet de retrouver fichiers et dossiers instantanément grâce à une recherche optimisée.  
-Tu peux ouvrir les fichiers directement depuis l’interface, rescanner le système, et tout ça dans un design sombre inspiré de Netflix 🔴  
+Tu peux ouvrir les fichiers directement depuis l’interface, rescanner le système, et tout ça dans un design sombre inspiré de Apples 
 
 ---
 
@@ -78,7 +78,7 @@ Tu peux réutiliser, modifier ou partager le projet tant que tu cites l’auteur
 ##⚡️ Description
 
 Searchy automatically scans your main folders — Downloads, Documents, Desktop, Pictures, and Music — and lets you instantly find files and folders through an optimized search engine.
-You can open files directly from the interface, rescan the system, all within a dark Netflix-inspired design 🔴
+You can open files directly from the interface, rescan the system, all within a dark Apples-inspired design 
 
 
 ---
