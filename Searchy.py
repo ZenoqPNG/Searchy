@@ -160,7 +160,7 @@ def show_credits():
     w.geometry("400x300")
     
     credits_text = """
-Searchy v0.3
+Searchy v0.4
 Développé par : ZenoqPNG
 Framework UI : CustomTkinter
 Images : PIL
@@ -252,26 +252,36 @@ def sort_results(results,sort_by):
         return sorted(results,key=lambda x: os.path.getmtime(x[1]) if os.path.isfile(x[1]) else 0,reverse=True)
     return results
 
-def update_results(sort_by="name",live=False):
+def update_results(sort_by="name", live=False):
     if not live:
         for l in result_labels:
             l.destroy()
         result_labels.clear()
-    sorted_results = sort_results(search_results,sort_by)
-    for i,(name,path) in enumerate(sorted_results[len(result_labels):] if live else sorted_results):
+
+    sorted_results = sort_results(search_results, sort_by)
+
+    appearance = ctk.get_appearance_mode()  # "light" ou "dark"
+    text_color = "#000000" if appearance == "light" else "#ffffff"
+    bg_colors = ("#f0f0f0", "#e0e0e0") if appearance == "light" else ("#2a2a2a", "#1f1f1f")
+
+    for i, (name, path) in enumerate(sorted_results[len(result_labels):] if live else sorted_results):
         icon = "📁" if os.path.isdir(path) else "📄"
-        bg = "#f0f0f0" if (len(result_labels)+i)%2==0 else "#e0e0e0"
-        fg = "#000000" if ctk.get_appearance_mode()=="light" else "#ffffff"
+        bg = bg_colors[i % 2]
         size = f" ({os.path.getsize(path)//1024} KB)" if os.path.isfile(path) else ""
         date = f" - {datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d')}" if os.path.isfile(path) else ""
-        lbl = ctk.CTkLabel(result_listbox,text=f"{icon} {name}{size}{date}",font=("Helvetica",14),
-                            fg_color=bg,text_color=fg,corner_radius=5)
-        lbl.pack(fill=ctk.X,pady=2,padx=5)
-        lbl.bind("<Double-Button-1>",lambda e,p=path: open_file(p))
-        lbl.bind("<Button-3>",lambda e,p=path: context_menu(e,p))
-        lbl.bind("<Enter>",lambda e,l=lbl: l.configure(fg_color="#d0d0d0"))
-        lbl.bind("<Leave>",lambda e,l=lbl,c=bg: l.configure(fg_color=c))
-        lbl.bind("<Motion>",lambda e,p=path: show_preview(p,e))
+
+        lbl = ctk.CTkLabel(result_listbox,
+                            text=f"{icon} {name}{size}{date}",
+                            font=("Helvetica", 14),
+                            fg_color=bg,
+                            text_color=text_color,
+                            corner_radius=5)
+        lbl.pack(fill=ctk.X, pady=2, padx=5)
+        lbl.bind("<Double-Button-1>", lambda e, p=path: open_file(p))
+        lbl.bind("<Button-3>", lambda e, p=path: context_menu(e, p))
+        lbl.bind("<Enter>", lambda e, l=lbl: l.configure(fg_color="#d0d0d0"))
+        lbl.bind("<Leave>", lambda e, l=lbl, c=bg: l.configure(fg_color=c))
+        lbl.bind("<Motion>", lambda e, p=path: show_preview(p, e))
         result_labels.append(lbl)
 
 def perform_search():
@@ -290,6 +300,11 @@ def perform_search():
             history.pop(0)
         save_history(history)
     update_results(sort_var.get() if 'sort_var' in globals() else "name")
+
+def animate_button_click(button):
+    w = button.cget("width")
+    button.configure(width=w+10)
+    root.after(100,lambda: button.configure(width=w))
 
 def rescan_files_with_anim():
     animate_button_click(rescan_button)
@@ -359,15 +374,163 @@ def change_theme(theme):
         ctk.set_appearance_mode("light")
     elif theme=="dark":
         ctk.set_appearance_mode("dark")
-    elif theme=="graphite":
-        ctk.set_appearance_mode("dark")
-    elif theme=="pastel":
-        ctk.set_appearance_mode("light")
+# -------------------------------
+# Nouvelles fonctionnalités v0.4 finalisées
+# -------------------------------
+def manage_scan_paths():
+    w = ctk.CTkToplevel(root)
+    w.title("Dossiers à scanner")
+    w.geometry("400x400")
 
-def animate_button_click(button):
-    w = button.cget("width")
-    button.configure(width=w+10)
-    root.after(100,lambda: button.configure(width=w))
+    paths = get_scan_paths()
+    list_frame = ctk.CTkScrollableFrame(w)
+    list_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+
+    path_vars = []
+
+    def refresh_list():
+        for widget in list_frame.winfo_children():
+            widget.destroy()
+        path_vars.clear()
+        for p in paths:
+            var = ctk.StringVar(value=p)
+            lbl = ctk.CTkEntry(list_frame, textvariable=var, width=300)
+            lbl.pack(pady=5)
+            path_vars.append(var)
+            remove_btn = ctk.CTkButton(list_frame, text="❌", width=30, command=lambda v=var: remove_path(v))
+            remove_btn.pack(pady=5)
+    
+    def remove_path(var):
+        paths.remove(var.get())
+        refresh_list()
+        save_scan_paths()
+
+    def add_path():
+        new_path = filedialog.askdirectory()
+        if new_path:
+            paths.append(new_path)
+            refresh_list()
+            save_scan_paths()
+
+    def save_scan_paths():
+        global FOLDERS_TO_SCAN
+        FOLDERS_TO_SCAN = [os.path.basename(p) for p in paths]
+        show_toast("Dossiers", "Liste mise à jour")
+
+    add_btn = ctk.CTkButton(w, text="Ajouter dossier", command=add_path)
+    add_btn.pack(pady=10)
+
+    refresh_list()
+
+def scan_network():
+    w = ctk.CTkToplevel(root)
+    w.title("Scan réseau")
+    w.geometry("400x200")
+
+    path_var = ctk.StringVar()
+
+    def choose_network_folder():
+        folder = filedialog.askdirectory(title="Choisir un dossier réseau")
+        if folder:
+            path_var.set(folder)
+
+    def start_scan():
+        folder = path_var.get()
+        if folder:
+            if folder not in FOLDERS_TO_SCAN:
+                FOLDERS_TO_SCAN.append(folder)
+            rescan_files_with_anim()
+            w.destroy()
+        else:
+            messagebox.showwarning("Scan réseau", "Aucun dossier sélectionné")
+
+    ctk.CTkButton(w, text="Choisir dossier réseau", command=choose_network_folder).pack(pady=20)
+    ctk.CTkLabel(w, textvariable=path_var).pack(pady=10)
+    ctk.CTkButton(w, text="Démarrer le scan", command=start_scan).pack(pady=20)
+
+    def refresh_listbox():
+        lb.delete(0, ctk.END)
+        for path in FOLDERS_TO_SCAN:
+            lb.insert(ctk.END, path)
+
+    def add_folder():
+        path = filedialog.askdirectory(title="Ajouter un dossier")
+        if path and path not in FOLDERS_TO_SCAN:
+            FOLDERS_TO_SCAN.append(path)
+            refresh_listbox()
+
+    def remove_folder():
+        selection = lb.curselection()
+        if selection:
+            path = lb.get(selection[0])
+            FOLDERS_TO_SCAN.remove(path)
+            refresh_listbox()
+
+    lb = ctk.CTkListbox(w, width=400, height=250)
+    lb.pack(pady=10)
+    refresh_listbox()
+
+    add_btn = ctk.CTkButton(w, text="Ajouter", command=add_folder)
+    add_btn.pack(side=ctk.LEFT, padx=10, pady=10)
+    remove_btn = ctk.CTkButton(w, text="Supprimer", command=remove_folder)
+    remove_btn.pack(side=ctk.RIGHT, padx=10, pady=10)
+
+def update_language(lang):
+    # Simple dictionnaire de traductions
+    translations = {
+    "fr": {
+        "search_placeholder": "Tapez votre recherche (nom:rapport, type:.txt, taille>1000)...",
+        "history": "📜 Historique",
+        "favorites": "⭐ Favoris",
+        "credits": "💡 Crédits",
+        "rescan": "🔄 Rescanner",
+        "export": "📤 Exporter",
+        "content_search": "Recherche dans contenu"
+    },
+    "en": {
+        "search_placeholder": "Type your search (name:report, type:.txt, size>1000)...",
+        "history": "📜 History",
+        "favorites": "⭐ Favorites",
+        "credits": "💡 Credits",
+        "rescan": "🔄 Rescan",
+        "export": "📤 Export",
+        "content_search": "Search in content"
+    },
+    "es": {  # espagnol
+        "search_placeholder": "Escriba su búsqueda (nombre:informe, tipo:.txt, tamaño>1000)...",
+        "history": "📜 Historial",
+        "favorites": "⭐ Favoritos",
+        "credits": "💡 Créditos",
+        "rescan": "🔄 Reescanear",
+        "export": "📤 Exportar",
+        "content_search": "Buscar en contenido"
+    },
+    "de": {  # allemand
+        "search_placeholder": "Geben Sie Ihre Suche ein (Name:Bericht, Typ:.txt, Größe>1000)...",
+        "history": "📜 Verlauf",
+        "favorites": "⭐ Favoriten",
+        "credits": "💡 Credits",
+        "rescan": "🔄 Neu scannen",
+        "export": "📤 Exportieren",
+        "content_search": "Inhalt durchsuchen"
+    }
+}
+
+    if lang not in translations:
+        show_toast("Langue", f"Langue {lang} non supportée")
+        return
+
+    t = translations[lang]
+
+    # Update UI
+    search_entry.configure(placeholder_text=t["search_placeholder"])
+    history_button.configure(text=t["history"])
+    favorites_button.configure(text=t["favorites"])
+    credits_button.configure(text=t["credits"])
+    rescan_button.configure(text=t["rescan"])
+    export_button.configure(text=t["export"])
+    content_check.configure(text=t["content_search"])
+    show_toast("Langue", f"Langue changée en {lang}")
 
 # -------------------------------
 # Initialisation
@@ -447,6 +610,15 @@ result_listbox.pack(padx=20,pady=20)
 sort_var = ctk.StringVar(value="name")
 sort_menu = ctk.CTkOptionMenu(root,values=["name","size","date"],variable=sort_var,command=lambda x:update_results(sort_var.get()))
 sort_menu.pack()
+
+filters_frame = tabview.tab("Filtres")
+ctk.CTkLabel(filters_frame, text="Filtres avancés", font=("Helvetica",18)).pack(pady=10)
+
+ctk.CTkButton(filters_frame, text="📁 Gérer dossiers à scanner", command=manage_scan_paths).pack(pady=5)
+ctk.CTkButton(filters_frame, text="🌐 Scanner réseau", command=scan_network).pack(pady=5)
+
+lang_var = ctk.StringVar(value="en")
+ctk.CTkOptionMenu(filters_frame, values=["en","es","de"], variable=lang_var, command=update_language).pack(pady=5)
 
 # -------------------------------
 # Main loop
