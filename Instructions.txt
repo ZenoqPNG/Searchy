@@ -1,7 +1,6 @@
 Instructions pour utiliser Searchy
 
 Localisez le fichier Searchy.exe :
-Après la compilation, il se trouve dans le dossier dist de votre projet.
 
 Créez un raccourci sur le bureau :
 
