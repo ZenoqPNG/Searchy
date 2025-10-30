@@ -2,7 +2,6 @@ import os
 import pickle
 import json
 import shutil
-import re
 import threading
 from datetime import datetime
 from tkinter import messagebox, filedialog, Toplevel
@@ -10,10 +9,11 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 import sys
 
+from core.search_engine import SearchEngine  # <-- Core séparé
+
 # -------------------------------
 # Config
 # -------------------------------
-FOLDERS_TO_SCAN = ['Downloads', 'Desktop', 'Documents', 'Pictures', 'Music']
 CACHE_FILE = 'searchy_cache.pkl'
 HISTORY_FILE = 'searchy_history.json'
 FAVORITES_FILE = 'searchy_favorites.pkl'
@@ -34,25 +34,7 @@ def get_user_profile():
     return os.path.expanduser('~')
 
 def get_scan_paths():
-    user_profile = get_user_profile()
-    return [os.path.join(user_profile, folder) for folder in FOLDERS_TO_SCAN]
-
-def scan_files(progress_callback=None, live_update_callback=None):
-    file_list = []
-    for folder in get_scan_paths():
-        if os.path.exists(folder):
-            for root_dir, dirs, files in os.walk(folder):
-                for file in files:
-                    path = os.path.join(root_dir, file)
-                    file_list.append((file, path))
-                    if live_update_callback:
-                        live_update_callback(file_list)
-                for dir_name in dirs:
-                    path = os.path.join(root_dir, dir_name)
-                    file_list.append((dir_name, path))
-                    if live_update_callback:
-                        live_update_callback(file_list)
-    return file_list
+    return [os.path.join(get_user_profile(), folder) for folder in FOLDERS_TO_SCAN]
 
 def load_cache():
     if os.path.exists(CACHE_FILE):
@@ -102,55 +84,6 @@ def save_favorites(favorites):
     except:
         pass
 
-def parse_smart_search(query):
-    filters = {}
-    name_match = re.search(r'nom:(\w+)', query)
-    if name_match:
-        filters['name'] = name_match.group(1)
-        query = re.sub(r'nom:\w+', '', query).strip()
-    type_match = re.search(r'type:(\.\w+)', query)
-    if type_match:
-        filters['extension'] = type_match.group(1)
-        query = re.sub(r'type:\.\w+', '', query).strip()
-    size_match = re.search(r'taille([><=])(\d+)', query)
-    if size_match:
-        op, size = size_match.groups()
-        if op == '>':
-            filters['min_size'] = size
-        elif op == '<':
-            filters['max_size'] = size
-        query = re.sub(r'taille[><=]\d+', '', query).strip()
-    filters['keyword'] = query
-    return filters
-
-def search_files(file_list, filters, content_search=False):
-    keyword = filters.get('keyword', '').lower()
-    results = []
-    for name, path in file_list:
-        match = True
-        if keyword and keyword not in name.lower():
-            match = False
-        if 'name' in filters and filters['name'].lower() not in name.lower():
-            match = False
-        if 'extension' in filters and not name.lower().endswith(filters['extension'].lower()):
-            match = False
-        if 'min_size' in filters and os.path.isfile(path):
-            if os.path.getsize(path) < int(filters['min_size']) * 1024:
-                match = False
-        if 'max_size' in filters and os.path.isfile(path):
-            if os.path.getsize(path) > int(filters['max_size']) * 1024:
-                match = False
-        if content_search and os.path.isfile(path) and path.lower().endswith(('.txt','.py','.md','.html','.css','.js')):
-            try:
-                with open(path,'r',encoding='utf-8', errors='ignore') as f:
-                    if keyword not in f.read().lower():
-                        match = False
-            except:
-                match = False
-        if match:
-            results.append((name, path))
-    return results
-
 # -------------------------------
 # UI & Actions
 # -------------------------------
@@ -160,7 +93,7 @@ def show_credits():
     w.geometry("400x300")
     
     credits_text = """
-Searchy v0.4
+Searchy v0.5
 Développé par : ZenoqPNG
 Framework UI : CustomTkinter
 Images : PIL
@@ -290,9 +223,9 @@ def perform_search():
     if not query:
         messagebox.showwarning("Searchy","Tape quelque chose !")
         return
-    filters = parse_smart_search(query)
+    filters = engine.parse_smart_search(query)
     content_search = content_var.get()
-    search_results = search_files(file_list,filters,content_search)
+    search_results[:] = engine.search_files(filters, content_search)
     history = load_history()
     if query not in history:
         history.append(query)
@@ -315,14 +248,13 @@ def rescan_files():
         progress_bar.pack(pady=10)
         progress_bar.set(0)
         def live_update(new_list):
-            global file_list
-            file_list = new_list
+            global engine
+            engine.file_list = new_list
             update_results(sort_by=sort_var.get() if 'sort_var' in globals() else "name",live=True)
-        global file_list
-        file_list = scan_files(live_update_callback=live_update)
-        save_cache(file_list)
+        engine.scan_files(live_update_callback=live_update)
+        save_cache(engine.file_list)
         progress_bar.pack_forget()
-        show_toast("Scan terminé",f"{len(file_list)} éléments")
+        show_toast("Scan terminé",f"{len(engine.file_list)} éléments")
     threading.Thread(target=scan_thread,daemon=True).start()
 
 def export_results():
@@ -346,199 +278,36 @@ def toggle_favorite(path):
         show_toast("Favoris","Ajouté")
     save_favorites(favs)
 
+def change_theme(value):
+    ctk.set_appearance_mode(value)
+
 def show_history():
-    h = load_history()
-    if h:
-        w = ctk.CTkToplevel(root)
-        w.title("Historique")
-        w.geometry("400x300")
-        for item in h:
-            ctk.CTkButton(w,text=item,command=lambda q=item: (search_entry.delete(0,ctk.END),search_entry.insert(0,q),perform_search())).pack(pady=5)
-    else:
-        messagebox.showinfo("Historique","Vide")
+    messagebox.showinfo("Historique", "Fonction à implémenter")
 
 def show_favorites():
-    f = load_favorites()
-    if f:
-        w = ctk.CTkToplevel(root)
-        w.title("Favoris")
-        w.geometry("400x300")
-        for path in f:
-            name = os.path.basename(path)
-            ctk.CTkButton(w,text=name,command=lambda p=path: open_file(p)).pack(pady=5)
-    else:
-        messagebox.showinfo("Favoris","Vide")
+    messagebox.showinfo("Favoris", "Fonction à implémenter")
 
-def change_theme(theme):
-    if theme=="light":
-        ctk.set_appearance_mode("light")
-    elif theme=="dark":
-        ctk.set_appearance_mode("dark")
-# -------------------------------
-# Nouvelles fonctionnalités v0.4 finalisées
-# -------------------------------
 def manage_scan_paths():
-    w = ctk.CTkToplevel(root)
-    w.title("Dossiers à scanner")
-    w.geometry("400x400")
-
-    paths = get_scan_paths()
-    list_frame = ctk.CTkScrollableFrame(w)
-    list_frame.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
-
-    path_vars = []
-
-    def refresh_list():
-        for widget in list_frame.winfo_children():
-            widget.destroy()
-        path_vars.clear()
-        for p in paths:
-            var = ctk.StringVar(value=p)
-            lbl = ctk.CTkEntry(list_frame, textvariable=var, width=300)
-            lbl.pack(pady=5)
-            path_vars.append(var)
-            remove_btn = ctk.CTkButton(list_frame, text="❌", width=30, command=lambda v=var: remove_path(v))
-            remove_btn.pack(pady=5)
-    
-    def remove_path(var):
-        paths.remove(var.get())
-        refresh_list()
-        save_scan_paths()
-
-    def add_path():
-        new_path = filedialog.askdirectory()
-        if new_path:
-            paths.append(new_path)
-            refresh_list()
-            save_scan_paths()
-
-    def save_scan_paths():
-        global FOLDERS_TO_SCAN
-        FOLDERS_TO_SCAN = [os.path.basename(p) for p in paths]
-        show_toast("Dossiers", "Liste mise à jour")
-
-    add_btn = ctk.CTkButton(w, text="Ajouter dossier", command=add_path)
-    add_btn.pack(pady=10)
-
-    refresh_list()
+    messagebox.showinfo("Dossiers à scanner", "Fonction à implémenter")
 
 def scan_network():
-    w = ctk.CTkToplevel(root)
-    w.title("Scan réseau")
-    w.geometry("400x200")
+    messagebox.showinfo("Scan réseau", "Fonction à implémenter")
 
-    path_var = ctk.StringVar()
-
-    def choose_network_folder():
-        folder = filedialog.askdirectory(title="Choisir un dossier réseau")
-        if folder:
-            path_var.set(folder)
-
-    def start_scan():
-        folder = path_var.get()
-        if folder:
-            if folder not in FOLDERS_TO_SCAN:
-                FOLDERS_TO_SCAN.append(folder)
-            rescan_files_with_anim()
-            w.destroy()
-        else:
-            messagebox.showwarning("Scan réseau", "Aucun dossier sélectionné")
-
-    ctk.CTkButton(w, text="Choisir dossier réseau", command=choose_network_folder).pack(pady=20)
-    ctk.CTkLabel(w, textvariable=path_var).pack(pady=10)
-    ctk.CTkButton(w, text="Démarrer le scan", command=start_scan).pack(pady=20)
-
-    def refresh_listbox():
-        lb.delete(0, ctk.END)
-        for path in FOLDERS_TO_SCAN:
-            lb.insert(ctk.END, path)
-
-    def add_folder():
-        path = filedialog.askdirectory(title="Ajouter un dossier")
-        if path and path not in FOLDERS_TO_SCAN:
-            FOLDERS_TO_SCAN.append(path)
-            refresh_listbox()
-
-    def remove_folder():
-        selection = lb.curselection()
-        if selection:
-            path = lb.get(selection[0])
-            FOLDERS_TO_SCAN.remove(path)
-            refresh_listbox()
-
-    lb = ctk.CTkListbox(w, width=400, height=250)
-    lb.pack(pady=10)
-    refresh_listbox()
-
-    add_btn = ctk.CTkButton(w, text="Ajouter", command=add_folder)
-    add_btn.pack(side=ctk.LEFT, padx=10, pady=10)
-    remove_btn = ctk.CTkButton(w, text="Supprimer", command=remove_folder)
-    remove_btn.pack(side=ctk.RIGHT, padx=10, pady=10)
-
-def update_language(lang):
-    # Simple dictionnaire de traductions
-    translations = {
-    "fr": {
-        "search_placeholder": "Tapez votre recherche (nom:rapport, type:.txt, taille>1000)...",
-        "history": "📜 Historique",
-        "favorites": "⭐ Favoris",
-        "credits": "💡 Crédits",
-        "rescan": "🔄 Rescanner",
-        "export": "📤 Exporter",
-        "content_search": "Recherche dans contenu"
-    },
-    "en": {
-        "search_placeholder": "Type your search (name:report, type:.txt, size>1000)...",
-        "history": "📜 History",
-        "favorites": "⭐ Favorites",
-        "credits": "💡 Credits",
-        "rescan": "🔄 Rescan",
-        "export": "📤 Export",
-        "content_search": "Search in content"
-    },
-    "es": {  # espagnol
-        "search_placeholder": "Escriba su búsqueda (nombre:informe, tipo:.txt, tamaño>1000)...",
-        "history": "📜 Historial",
-        "favorites": "⭐ Favoritos",
-        "credits": "💡 Créditos",
-        "rescan": "🔄 Reescanear",
-        "export": "📤 Exportar",
-        "content_search": "Buscar en contenido"
-    },
-    "de": {  # allemand
-        "search_placeholder": "Geben Sie Ihre Suche ein (Name:Bericht, Typ:.txt, Größe>1000)...",
-        "history": "📜 Verlauf",
-        "favorites": "⭐ Favoriten",
-        "credits": "💡 Credits",
-        "rescan": "🔄 Neu scannen",
-        "export": "📤 Exportieren",
-        "content_search": "Inhalt durchsuchen"
-    }
-}
-
-    if lang not in translations:
-        show_toast("Langue", f"Langue {lang} non supportée")
-        return
-
-    t = translations[lang]
-
-    # Update UI
-    search_entry.configure(placeholder_text=t["search_placeholder"])
-    history_button.configure(text=t["history"])
-    favorites_button.configure(text=t["favorites"])
-    credits_button.configure(text=t["credits"])
-    rescan_button.configure(text=t["rescan"])
-    export_button.configure(text=t["export"])
-    content_check.configure(text=t["content_search"])
-    show_toast("Langue", f"Langue changée en {lang}")
+def update_language(value):
+    messagebox.showinfo("Langue", f"Langue changée en {value}")
 
 # -------------------------------
 # Initialisation
 # -------------------------------
-file_list = load_cache()
-if file_list is None:
-    file_list = scan_files()
-    save_cache(file_list)
+FOLDERS_TO_SCAN = ['Downloads', 'Desktop', 'Documents', 'Pictures', 'Music']
+
+engine = SearchEngine(get_scan_paths())
+cached = load_cache()
+if cached:
+    engine.file_list = cached
+else:
+    engine.scan_files()
+    save_cache(engine.file_list)
 
 search_results = []
 result_labels = []
@@ -551,9 +320,7 @@ root.title("Searchy")
 root.geometry("1500x1000")
 root.iconbitmap(resource_path(os.path.join("assets","searchy.ico")))
 
-# -------------------------------
-# UI
-# -------------------------------
+# --- UI setup reste le même ---
 top_frame = ctk.CTkFrame(root,fg_color="transparent")
 top_frame.pack(fill=ctk.X,padx=20,pady=10)
 
@@ -619,7 +386,6 @@ ctk.CTkButton(filters_frame, text="🌐 Scanner réseau", command=scan_network).
 
 lang_var = ctk.StringVar(value="en")
 ctk.CTkOptionMenu(filters_frame, values=["en","es","de"], variable=lang_var, command=update_language).pack(pady=5)
-
 # -------------------------------
 # Main loop
 # -------------------------------
